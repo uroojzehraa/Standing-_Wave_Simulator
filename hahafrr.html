@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Standing Wave Simulator + Quiz</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #f5f3f3;
+      color: #333;
+    }
+    h1 {
+      font-size: 2em;
+      margin-top: 20px;
+    }
+    canvas {
+      border: 1px solid #ccc;
+      margin: 20px auto;
+      display: block;
+    }
+    .controls, .quiz {
+      margin: 20px auto;
+      max-width: 700px;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    input[type="range"] {
+      width: 100%;
+    }
+    .quiz-question {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-bottom: 1px solid #131112;
+    }
+    .feedback {
+      margin-top: 20px;
+      padding: 10px;
+      border-top: 2px solid #000;
+      background: #eafffd;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #theory-box {
+      display: none;
+      padding: 10px;
+      margin: 20px auto;
+      max-width: 700px;
+      background-color: #eafffd;
+      border-radius: 8px;
+      text-align: left;
+    }
+    h2[onclick] {
+      cursor: pointer;
+      color: #0a0c0c;
+      font-size: 1.6em;
+      margin-top: 30px;
+      background: #eafffd;
+      padding: 10px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1> Standing Wave Simulator</h1>
+  <canvas id="waveCanvas" width="700" height="200"></canvas>
+
+  <div class="controls">
+    <label for="freq">Frequency: <span id="freqVal">2</span> Hz</label>
+    <input id="freq" type="range" min="1" max="20" value="2" step="1" oninput="updateSimulation()">
+
+    <label for="amp">Amplitude: <span id="ampVal">50</span></label>
+    <input id="amp" type="range" min="10" max="100" value="50" step="1" oninput="updateSimulation()">
+
+    <button onclick="toggleSound()">🔊 Toggle Continuous Tone</button>
+  </div>
+
+  <div class="quiz">
+    <h2>Standing Wave Quiz</h2>
+    <form id="quizForm">
+      <div id="quizContainer"></div>
+      <button type="submit">Submit Quiz</button>
+    </form>
+    <div class="feedback" id="quizFeedback"></div>
+  </div>
+
+  <h2 onclick="toggleTheory()"> Theory, Fun Facts & Applications ▼</h2> 
+  <div id="theory-box">
+    <h3>What Actually is a Standing Wave?</h3>
+    <p>Imagine two waves meeting in a corridor. One’s like “I’m going left!” and the other’s like “I’m going right!” but they’re identical twins. They crash into each other, vibe perfectly, and form a standing wave a wave that looks like it's frozen mid-dance, with some points (nodes) staying chill and others (antinodes) partying hard.</p>
+
+    <h3>Fun Facts</h3>
+    <ul>
+      <li>Microwaves secretly host wild standing wave raves </li>
+      <li>Standing waves: the only waves that ghost you and stick around.</li>
+      <li>They fake stillness better than I fake confidence in physics exams.</li>
+    </ul>
+
+    <h3>Real-Life Applications</h3>
+    <ul>
+      <li> MRI: Standing waves let us peek inside brains — sci-fi? Nah, just science.</li>
+      <li> Instruments: Guitars to flutes — standing waves are physics rockstars.</li>
+      <li> Microwaves: Uneven food? Blame the chaotic standing wave rave.</li>
+      <li> Antennas: No standing waves = no WiFi. Simple.</li>
+      <li> Radar: Standing waves help spot planes, ships, and storm drama.</li>
+      <li> Rockets: Too many waves in engines = boom. Not good.</li>
+      <li> Quantum Labs: We trap particles using standing wave ‘cages’.</li>
+      <li> Buildings: Waves can shake structures like invisible ghosts.</li>
+
+    </ul>
+  </div>
+
+  <script>
+    // Wave animation
+    const canvas = document.getElementById('waveCanvas');
+    const ctx = canvas.getContext('2d');
+    const freqSlider = document.getElementById("freq");
+    const ampSlider = document.getElementById("amp");
+    const freqVal = document.getElementById("freqVal");
+    const ampVal = document.getElementById("ampVal");
+
+    let freq = parseFloat(freqSlider.value);
+    let amp = parseFloat(ampSlider.value);
+    let phase = 0;
+
+    function drawWave() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const y = canvas.height / 2 + amp * Math.sin((x / canvas.width) * freq * 2 * Math.PI - phase);
+        ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = 'blue';
+      ctx.stroke();
+      phase += 0.1;
+      requestAnimationFrame(drawWave);
+    }
+    drawWave();
+
+    freqSlider.oninput = () => {
+      freq = parseFloat(freqSlider.value);
+      freqVal.textContent = freq;
+      updateSimulation();
+    };
+    ampSlider.oninput = () => {
+      amp = parseFloat(ampSlider.value);
+      ampVal.textContent = amp;
+    };
+
+    // Sound effect logic
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.05;
+    gainNode.connect(audioCtx.destination);
+    let oscillator = null;
+
+    function toggleSound() {
+      if (!oscillator) {
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(freq * 100, audioCtx.currentTime);
+        oscillator.connect(gainNode);
+        oscillator.start();
+      } else {
+        oscillator.stop();
+        oscillator.disconnect();
+        oscillator = null;
+      }
+    }
+
+    function updateSimulation() {
+      if (oscillator) {
+        oscillator.frequency.setValueAtTime(freq * 100, audioCtx.currentTime);
+      }
+    }
+
+    function toggleTheory() {
+      const box = document.getElementById("theory-box");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    }
+
+    // Full Quiz Array
+    const quizData = [
+      {
+        q: "You pluck a string and observe a standing wave pattern with three antinodes. What is the harmonic number, and how many nodes (including ends) are there?",
+        options: ["Harmonic 2; 2 nodes", "Harmonic 3; 4 nodes", "Harmonic 3; 3 nodes", "Harmonic 2; 3 antinodes and 3 confused electrons"],
+        answer: 1,
+        explanation: "Each harmonic adds one antinode. So 3 antinodes ⇒ 3rd harmonic. In harmonic n, there are n+1 nodes (including both fixed ends). So: 3rd harmonic = 4 nodes."
+      },
+      {
+        q:  "Double the amplitude of a wave. What happens to the energy?",
+        options: ["It doubles", "It triples", "It quadruples as energy loves drama", "It vanishes mysteriously"],
+        answer: 2,
+        explanation: "Energy ∝ Amplitude². Double amplitude = 4x energy."
+      },
+      {
+        q: "In a standing wave, nodes are...",
+        options: ["Places where energy is on vacation", "Spots of max motion", "Mid points", "Where amplitude throws a party"],
+        answer: 0,
+        explanation: "Nodes are points where destructive interference cancels the wave – no movement!"
+      },
+      {
+        q: "Standing waves form when...",
+        options: ["One wave gets tired and stops", "Two identical waves go in opposite directions and interfere", "One wave teaches another how to stand", "You pause the wave mid-action"],
+        answer: 1,
+        explanation: "Standing waves = interference between identical opposite-traveling waves."
+      },
+      {
+        q: "Why does food heat unevenly in a microwave?",
+        options: ["The microwave has mood swings", "Because of standing wave patterns causing hot and cold spots", "tbh Ghosts", "Because of the Law of the Che Guevara"],
+        answer: 1,
+        explanation: "Standing waves create regions with more or less energy, = uneven heating."
+      },
+      {
+        q: "Where would you find standing waves in real life?",
+        options: ["In my dreams", "In guitar strings and vocal cords", "Only in Ohio", "In the water ripples obviously "],
+        answer: 1,
+        explanation: "Guitar strings and voice cords are full of standing wave patterns."
+      },
+      {
+        q: "If frequency goes down and speed constant, wavelength will...",
+        options: ["Go up", "Go down", "Stay frozen", "Disintegrate"],
+        answer: 0,
+        explanation: "Lower frequency = longer wavelength when wave speed is constant."
+      },
+      {
+        q: "What happens at an antinode?",
+        options: ["The wave throws a tantrum, max motion!", "Mini Motion", "Total cancellation of charges result in malfunction", "Physics takes a break"],
+        answer: 0,
+        explanation: "Antinodes = points of max displacement and energy."
+      },
+      {
+        q: "Why do antennas rely on standing waves?",
+        options: ["Look cool on rooftops", "Maximize signal transmission", "Because they are ESTP 7W8", "Generate free electricity"],
+        answer: 1,
+        explanation: "Standing waves allow efficient signal transfer on antennas."
+      },
+      {
+        q: "What standing waves do in buildings?",
+        options: ["Help buildings by Ribosomes", "Cause resonance and damage structures", "Make walls glow", "Add aesthetic waves"],
+        answer: 1,
+        explanation: "Standing waves = unwanted vibration = structural damage!"
+      },
+      {
+        q: "Why do rocket engineers fear unwanted standing waves?",
+        options: ["Because they’re loud", "Create destructive resonance and explosions", "They cost more fuel", "Because of Ten Shadows Technique" ],
+        answer: 1,
+        explanation: "In rocket chambers, standing waves can cause dangerous pressure buildups — boom!"
+      },
+      {
+        q: "Why does blowing across a bottle top make a sound?",
+        options: ["Because you're amazing", "Standing waves form in the air column", "Because of Eosinophlic Myelocyte", "Random air vibrations"],
+        answer: 1,
+        explanation: "Air forms standing waves in the bottle = resonant sound."
+      },
+      {
+        q: "In quantum physics, standing waves help us...",
+        options: ["Trap particles like tiny pets", "Study the Laws of Albert Camus", "Create Fermion and Boson", "Generate Urchin"],
+        answer: 0,
+        explanation:"Standing waves are used to trap and study atoms — a bit like building wave cages for them!"
+      },
+      {
+        q: "14.FINAL BOSS: A standing wave is formed in a string fixed at both ends. If the wave's frequency is increased but only the first harmonic is allowed to form, what happens to the number of nodes and the wavelength?",
+        options: ["The number of nodes decreases, and the wavelength increases", "The number of nodes increases, and the wavelength decreases", "Both nodes and wavelength increase", "Nodes stay the same, but wavelength decreases"],
+        answer: 2,
+        explanation: "In the first harmonic (fundamental mode), the number of nodes is fixed — only the two ends and the center node. If frequency increases but we're restricted to that harmonic, the wavelength must decrease to maintain the standing wave in a fixed-length string. So: nodes stay the same, wavelength decreases."
+      }
+    ];
+
+    const quizContainer = document.getElementById('quizContainer');
+    const quizForm = document.getElementById('quizForm');
+    const quizFeedback = document.getElementById('quizFeedback');
+
+    quizData.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-question';
+      div.innerHTML = `
+        <strong>Q${index + 1}. ${item.q}</strong><br>
+        ${item.options.map((opt, i) => `
+          <label><input type="radio" name="q${index}" value="${i}" required> ${opt}</label><br>
+        `).join('')}
+      `;
+      quizContainer.appendChild(div);
+    });
+
+    quizForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      let score = 0;
+      let feedbackHTML = "";
+      quizData.forEach((q, i) => {
+        const selected = quizForm[`q${i}`].value;
+        if (parseInt(selected) === q.answer) {
+          score++;
+          feedbackHTML += `<p><strong>Q${i + 1}:</strong> ✅ Correct</p>`;
+        } else {
+          feedbackHTML += `<p><strong>Q${i + 1}:</strong> ❌ Incorrect<br>
+          <em>Correct:</em> ${q.options[q.answer]}<br>
+          <strong>Why:</strong> ${q.explanation}</p>`;
+        }
+      });
+      feedbackHTML += `<h3>Final Score: ${score} / ${quizData.length}</h3>`;
+      quizFeedback.innerHTML = feedbackHTML;
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+  </script>
+</body>
+</html>
